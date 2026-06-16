@@ -51,35 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function loadUserProfile(userId: string) {
     try {
       const profile = await getUserProfile(userId)
-      if (profile) {
-        setUser(profile)
-      } else {
-        // If profile doesn't exist, create a default one
-        const { data: userData } = await supabase.auth.getUser()
-        if (userData.user) {
-          const { data: newProfile, error: createError } = await supabase
-            .from('profiles')
-            .upsert({
-              id: userId,
-              email: userData.user.email || '',
-              full_name: userData.user.user_metadata?.full_name || 'User',
-              role: 'student', // Default role
-              phone: '',
-            })
-            .select()
-            .single()
-          
-          if (!createError && newProfile) {
-            setUser(newProfile)
-          } else if (createError) {
-            // If upsert fails, try to fetch the profile again (it might have been created)
-            const retryProfile = await getUserProfile(userId)
-            if (retryProfile) {
-              setUser(retryProfile)
-            }
-          }
-        }
-      }
+      setUser(profile)
       setLoading(false)
     } catch (error) {
       console.error('Error loading user profile:', error)
