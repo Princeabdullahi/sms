@@ -143,7 +143,7 @@ export default function NoticeboardPage() {
       title: notice.title,
       content: notice.content,
       target_audience: notice.target_audience,
-      event_date: notice.event_date ? new Date(notice.event_date) : null
+      event_date: notice.event_date ? new Date(notice.event_date) : undefined
     })
     setDialogOpen(true)
   }
