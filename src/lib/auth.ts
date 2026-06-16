@@ -17,6 +17,9 @@ export async function signUp(email: string, password: string, fullName: string, 
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      emailRedirectTo: `${window.location.origin}/login`,
+    }
   })
 
   if (authError) throw authError

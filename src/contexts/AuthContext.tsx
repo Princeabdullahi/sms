@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (userData.user) {
           const { data: newProfile, error: createError } = await supabase
             .from('profiles')
-            .insert({
+            .upsert({
               id: userId,
               email: userData.user.email || '',
               full_name: userData.user.user_metadata?.full_name || 'User',
@@ -71,6 +71,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           if (!createError && newProfile) {
             setUser(newProfile)
+          } else if (createError) {
+            // If upsert fails, try to fetch the profile again (it might have been created)
+            const retryProfile = await getUserProfile(userId)
+            if (retryProfile) {
+              setUser(retryProfile)
+            }
           }
         }
       }
@@ -82,10 +88,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function signIn(email: string, password: string) {
-    const { data } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
+
+    if (error) {
+      throw error
+    }
 
     if (data.user) {
       await loadUserProfile(data.user.id)

@@ -47,7 +47,7 @@ export default function UsersPage() {
     email: '',
     password: '',
     full_name: '',
-    role: 'student',
+    role: '',
     phone: ''
   })
 
@@ -113,7 +113,7 @@ export default function UsersPage() {
         email: '',
         password: '',
         full_name: '',
-        role: 'student',
+        role: '',
         phone: ''
       })
       fetchUsers()
