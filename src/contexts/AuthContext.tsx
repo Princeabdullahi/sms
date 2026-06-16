@@ -18,6 +18,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -25,22 +26,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        // Only load profile if we don't already have a user logged in
-        if (!user) {
+        // Only load profile if this is the current user (not a newly created user)
+        if (!currentUserId || currentUserId === session.user.id) {
+          setCurrentUserId(session.user.id)
           await loadUserProfile(session.user.id)
         }
       } else if (event === 'SIGNED_OUT') {
         setUser(null)
+        setCurrentUserId(null)
       }
     })
 
     return () => subscription.unsubscribe()
-  }, [user])
+  }, [currentUserId])
 
   async function checkUser() {
     try {
       const currentUser = await getCurrentUser()
       if (currentUser) {
+        setCurrentUserId(currentUser.id)
         await loadUserProfile(currentUser.id)
       } else {
         setLoading(false)
