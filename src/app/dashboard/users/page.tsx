@@ -33,7 +33,7 @@ import {
 } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
-import { Plus, Pencil, Trash2, Search, Eye } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search, Eye, Upload } from 'lucide-react'
 import { signUp } from '@/lib/auth'
 
 export default function UsersPage() {
@@ -52,7 +52,8 @@ export default function UsersPage() {
     full_name: '',
     role: '',
     phone: '',
-    student_id: ''
+    student_id: '',
+    avatar_url: '' as string | File
   })
 
   useEffect(() => {
@@ -86,6 +87,27 @@ export default function UsersPage() {
     e.preventDefault()
     
     try {
+      let avatarUrl = formData.avatar_url
+
+      // Handle image upload if a new file is selected
+      if (formData.avatar_url instanceof File) {
+        const file = formData.avatar_url as File
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${formData.email}_${Date.now()}.${fileExt}`
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(fileName, file)
+
+        if (uploadError) throw uploadError
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(fileName)
+        
+        avatarUrl = publicUrl
+      }
+
       if (editingUser) {
         // Update existing user
         const { error } = await supabase
@@ -94,7 +116,8 @@ export default function UsersPage() {
             full_name: formData.full_name,
             role: formData.role,
             phone: formData.phone,
-            student_id: formData.student_id
+            student_id: formData.student_id,
+            avatar_url: avatarUrl
           })
           .eq('id', editingUser.id)
 
@@ -110,6 +133,18 @@ export default function UsersPage() {
           formData.phone,
           formData.student_id
         )
+        
+        // Update avatar after user creation
+        if (avatarUrl) {
+          const { data: userData } = await supabase.auth.getUser()
+          if (userData.user) {
+            await supabase
+              .from('profiles')
+              .update({ avatar_url: avatarUrl })
+              .eq('id', userData.user.id)
+          }
+        }
+        
         toast.success('User created successfully')
       }
 
@@ -121,7 +156,8 @@ export default function UsersPage() {
         full_name: '',
         role: '',
         phone: '',
-        student_id: ''
+        student_id: '',
+        avatar_url: ''
       })
       fetchUsers()
     } catch (error: any) {
@@ -157,7 +193,8 @@ export default function UsersPage() {
       full_name: user.full_name,
       role: user.role,
       phone: user.phone,
-      student_id: user.student_id || ''
+      student_id: user.student_id || '',
+      avatar_url: user.avatar_url || ''
     })
     setDialogOpen(true)
   }
@@ -170,7 +207,8 @@ export default function UsersPage() {
       full_name: '',
       role: '',
       phone: '',
-      student_id: ''
+      student_id: '',
+      avatar_url: ''
     })
     setDialogOpen(true)
   }
@@ -300,12 +338,14 @@ export default function UsersPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="student_id">Student ID (Optional)</Label>
+                  <Label htmlFor="student_id">
+                    {formData.role === 'teacher' ? 'Teacher ID' : formData.role === 'student' ? 'Student ID' : formData.role === 'parent' ? 'Parent ID' : 'ID'} (Optional)
+                  </Label>
                   <Input
                     id="student_id"
                     value={formData.student_id}
                     onChange={(e) => setFormData({ ...formData, student_id: e.target.value })}
-                    placeholder="e.g., GOA-2024-001"
+                    placeholder={formData.role === 'teacher' ? 'e.g., GOA-T-001' : formData.role === 'student' ? 'e.g., GOA-S-001' : formData.role === 'parent' ? 'e.g., GOA-P-001' : 'e.g., GOA-001'}
                   />
                 </div>
                 <div className="space-y-2">
@@ -317,6 +357,31 @@ export default function UsersPage() {
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     required
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="avatar">Profile Picture (Passport)</Label>
+                  <div className="flex items-center gap-4">
+                    {formData.avatar_url && typeof formData.avatar_url === 'string' && (
+                      <img 
+                        src={formData.avatar_url} 
+                        alt="Current avatar"
+                        className="w-16 h-16 rounded-full object-cover"
+                      />
+                    )}
+                    <div className="flex-1">
+                      <Input
+                        id="avatar"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            setFormData({ ...formData, avatar_url: file })
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
                 </div>
                 <Button type="submit" className="w-full">
                   {editingUser ? 'Update User' : 'Create User'}
@@ -416,7 +481,7 @@ export default function UsersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Student ID</TableHead>
+                  <TableHead>ID</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
