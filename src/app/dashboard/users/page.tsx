@@ -33,7 +33,7 @@ import {
 } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
-import { Plus, Pencil, Trash2, Search } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search, Eye } from 'lucide-react'
 import { signUp } from '@/lib/auth'
 
 export default function UsersPage() {
@@ -41,14 +41,18 @@ export default function UsersPage() {
   const router = useRouter()
   const [users, setUsers] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState('')
+  const [roleFilter, setRoleFilter] = useState('all')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<any>(null)
+  const [viewingUser, setViewingUser] = useState<any>(null)
+  const [viewDialogOpen, setViewDialogOpen] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     full_name: '',
     role: '',
-    phone: ''
+    phone: '',
+    student_id: ''
   })
 
   useEffect(() => {
@@ -89,7 +93,8 @@ export default function UsersPage() {
           .update({
             full_name: formData.full_name,
             role: formData.role,
-            phone: formData.phone
+            phone: formData.phone,
+            student_id: formData.student_id
           })
           .eq('id', editingUser.id)
 
@@ -102,7 +107,8 @@ export default function UsersPage() {
           formData.password,
           formData.full_name,
           formData.role as any,
-          formData.phone
+          formData.phone,
+          formData.student_id
         )
         toast.success('User created successfully')
       }
@@ -114,7 +120,8 @@ export default function UsersPage() {
         password: '',
         full_name: '',
         role: '',
-        phone: ''
+        phone: '',
+        student_id: ''
       })
       fetchUsers()
     } catch (error: any) {
@@ -149,7 +156,8 @@ export default function UsersPage() {
       password: '',
       full_name: user.full_name,
       role: user.role,
-      phone: user.phone
+      phone: user.phone,
+      student_id: user.student_id || ''
     })
     setDialogOpen(true)
   }
@@ -160,17 +168,29 @@ export default function UsersPage() {
       email: '',
       password: '',
       full_name: '',
-      role: 'student',
-      phone: ''
+      role: '',
+      phone: '',
+      student_id: ''
     })
     setDialogOpen(true)
   }
 
-  const filteredUsers = users.filter(user =>
-    user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.role.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  function handleView(user: any) {
+    setViewingUser(user)
+    setViewDialogOpen(true)
+  }
+
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = 
+      user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.student_id && user.student_id.toLowerCase().includes(searchTerm.toLowerCase()))
+    
+    const matchesRole = roleFilter === 'all' || user.role === roleFilter
+    
+    return matchesSearch && matchesRole
+  })
 
   if (loading) {
     return (
@@ -280,6 +300,15 @@ export default function UsersPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="student_id">Student ID (Optional)</Label>
+                  <Input
+                    id="student_id"
+                    value={formData.student_id}
+                    onChange={(e) => setFormData({ ...formData, student_id: e.target.value })}
+                    placeholder="e.g., GOA-2024-001"
+                  />
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="phone">Phone</Label>
                   <Input
                     id="phone"
@@ -297,22 +326,97 @@ export default function UsersPage() {
           </Dialog>
         </div>
 
+        {/* User Detail View Dialog */}
+        <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>User ID Card</DialogTitle>
+              <DialogDescription>
+                View user details
+              </DialogDescription>
+            </DialogHeader>
+            {viewingUser && (
+              <div className="space-y-4">
+                <div className="flex flex-col items-center space-y-4">
+                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold">
+                    {viewingUser.avatar_url ? (
+                      <img 
+                        src={viewingUser.avatar_url} 
+                        alt={viewingUser.full_name}
+                        className="w-full h-full rounded-full object-cover"
+                      />
+                    ) : (
+                      viewingUser.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+                    )}
+                  </div>
+                  <div className="text-center">
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                      {viewingUser.full_name}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {viewingUser.role.replace('_', ' ').toUpperCase()}
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-3 pt-4 border-t">
+                  <div className="flex justify-between">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Student ID:</span>
+                    <span className="text-sm text-gray-900 dark:text-white">{viewingUser.student_id || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Email:</span>
+                    <span className="text-sm text-gray-900 dark:text-white">{viewingUser.email}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Phone:</span>
+                    <span className="text-sm text-gray-900 dark:text-white">{viewingUser.phone}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Joined:</span>
+                    <span className="text-sm text-gray-900 dark:text-white">{new Date(viewingUser.created_at).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
         <Card>
           <CardHeader>
-            <div className="flex items-center gap-2">
-              <Search className="h-4 w-4 text-gray-500" />
-              <Input
-                placeholder="Search users..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="max-w-sm"
-              />
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="flex items-center gap-2 flex-1">
+                <Search className="h-4 w-4 text-gray-500" />
+                <Input
+                  placeholder="Search users..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="max-w-sm"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="roleFilter">Filter by Role:</Label>
+                <Select value={roleFilter} onValueChange={setRoleFilter}>
+                  <SelectTrigger id="roleFilter" className="w-[180px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Roles</SelectItem>
+                    <SelectItem value="super_admin">Super Admin</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="accountant">Accountant</SelectItem>
+                    <SelectItem value="teacher">Teacher</SelectItem>
+                    <SelectItem value="student">Student</SelectItem>
+                    <SelectItem value="parent">Parent</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Student ID</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
@@ -324,13 +428,14 @@ export default function UsersPage() {
               <TableBody>
                 {filteredUsers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
+                    <TableCell colSpan={7} className="text-center py-8">
                       No users found
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredUsers.map((user) => (
                     <TableRow key={user.id}>
+                      <TableCell className="font-medium">{user.student_id || '-'}</TableCell>
                       <TableCell className="font-medium">{user.full_name}</TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell>
@@ -344,6 +449,13 @@ export default function UsersPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleView(user)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"

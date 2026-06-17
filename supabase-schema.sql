@@ -9,6 +9,7 @@ CREATE TABLE profiles (
   role TEXT NOT NULL CHECK (role IN ('super_admin', 'admin', 'accountant', 'teacher', 'student', 'parent')),
   phone TEXT NOT NULL,
   avatar_url TEXT,
+  student_id TEXT UNIQUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

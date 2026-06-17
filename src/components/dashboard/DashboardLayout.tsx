@@ -152,7 +152,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
             <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
-              School Management System
+              Golden Olives Academy
             </h1>
           </div>
           <div className="flex items-center gap-2 sm:gap-4">

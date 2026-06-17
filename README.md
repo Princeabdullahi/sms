@@ -1,4 +1,4 @@
-# School Management System
+# Golden Olives Academy
 
 A comprehensive school management platform built with Next.js, Supabase, and shadcn/ui. This system provides role-based access control for different user types including Super Admin, Admin, Accountant, Teacher, Student, and Parent.
 

@@ -9,11 +9,12 @@ export interface UserProfile {
   role: UserRole
   phone: string
   avatar_url: string | null
+  student_id: string | null
   created_at: string
   updated_at: string
 }
 
-export async function signUp(email: string, password: string, fullName: string, role: UserRole, phone: string) {
+export async function signUp(email: string, password: string, fullName: string, role: UserRole, phone: string, studentId?: string) {
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email,
     password,
@@ -37,6 +38,7 @@ export async function signUp(email: string, password: string, fullName: string, 
         full_name: fullName,
         role,
         phone,
+        student_id: studentId || null,
       })
 
     if (profileError) throw profileError

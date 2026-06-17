@@ -17,7 +17,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "School Management System",
+  title: "Golden Olives Academy",
   description: "Comprehensive school management platform",
 };
 

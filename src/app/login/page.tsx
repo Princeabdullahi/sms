@@ -40,7 +40,7 @@ export default function LoginPage() {
               <GraduationCap className="h-8 w-8 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">School Management System</CardTitle>
+          <CardTitle className="text-2xl font-bold">Golden Olives Academy</CardTitle>
           <CardDescription>Enter your credentials to access your account</CardDescription>
         </CardHeader>
         <CardContent>
