@@ -18,7 +18,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('currentUserId')
+    }
+    return null
+  })
   const router = useRouter()
 
   useEffect(() => {
@@ -29,11 +34,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Only load profile if this is the current user (not a newly created user)
         if (!currentUserId || currentUserId === session.user.id) {
           setCurrentUserId(session.user.id)
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('currentUserId', session.user.id)
+          }
           await loadUserProfile(session.user.id)
         }
       } else if (event === 'SIGNED_OUT') {
         setUser(null)
         setCurrentUserId(null)
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('currentUserId')
+        }
       }
     })
 
@@ -44,8 +55,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const currentUser = await getCurrentUser()
       if (currentUser) {
-        setCurrentUserId(currentUser.id)
-        await loadUserProfile(currentUser.id)
+        // Check if this is the stored current user
+        const storedUserId = typeof window !== 'undefined' ? localStorage.getItem('currentUserId') : null
+        if (!storedUserId || storedUserId === currentUser.id) {
+          setCurrentUserId(currentUser.id)
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('currentUserId', currentUser.id)
+          }
+          await loadUserProfile(currentUser.id)
+        } else {
+          // Different user signed in, load their profile
+          setCurrentUserId(currentUser.id)
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('currentUserId', currentUser.id)
+          }
+          await loadUserProfile(currentUser.id)
+        }
       } else {
         setLoading(false)
       }

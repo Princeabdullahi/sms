@@ -25,7 +25,9 @@ import {
   UserCheck,
   Receipt,
   Upload,
-  Bell
+  Bell,
+  Menu,
+  X
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -103,7 +105,7 @@ const navItems: NavItem[] = [
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, signOut } = useAuth()
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const pathname = usePathname()
 
   const filteredNavItems = navItems.filter(item => 
@@ -145,24 +147,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               variant="ghost"
               size="icon"
               onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="lg:hidden"
             >
-              <LayoutDashboard className="h-5 w-5" />
+              {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
               School Management System
             </h1>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative">
+                <Button variant="ghost" className="relative h-8 sm:h-auto">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={user.avatar_url || undefined} />
                     <AvatarFallback>{getInitials(user.full_name)}</AvatarFallback>
                   </Avatar>
-                  <span className="ml-2 text-sm font-medium">{user.full_name}</span>
+                  <span className="hidden sm:block ml-2 text-sm font-medium">{user.full_name}</span>
                   <span className={cn(
-                    "ml-2 px-2 py-0.5 text-xs text-white rounded-full",
+                    "hidden sm:inline-block ml-2 px-2 py-0.5 text-xs text-white rounded-full",
                     getRoleBadgeColor(user.role)
                   )}>
                     {user.role.replace('_', ' ')}
@@ -189,11 +192,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </header>
 
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <aside
         className={cn(
           "fixed left-0 top-16 bottom-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 z-40",
-          sidebarOpen ? "w-64" : "w-0 overflow-hidden"
+          sidebarOpen ? "w-64 translate-x-0" : "w-64 -translate-x-full lg:translate-x-0 lg:w-64"
         )}
       >
         <nav className="p-4 space-y-2">
@@ -204,6 +215,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={() => setSidebarOpen(false)}
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
                   isActive
@@ -223,10 +235,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <main
         className={cn(
           "pt-16 transition-all duration-300",
-          sidebarOpen ? "ml-64" : "ml-0"
+          "lg:ml-64"
         )}
       >
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {children}
         </div>
       </main>
