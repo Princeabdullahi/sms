@@ -3,6 +3,8 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Toaster } from "@/components/ui/sonner";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -19,6 +21,25 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Golden Olives Academy",
   description: "Comprehensive school management platform",
+  manifest: "/manifest.json",
+  themeColor: "#3b82f6",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Golden Olives Academy",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  icons: {
+    icon: [
+      { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512x512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
+    ],
+  },
 };
 
 export default function RootLayout({
@@ -35,6 +56,8 @@ export default function RootLayout({
         <AuthProvider>
           {children}
           <Toaster />
+          <PWAInstallPrompt />
+          <ServiceWorkerRegistration />
         </AuthProvider>
       </body>
     </html>

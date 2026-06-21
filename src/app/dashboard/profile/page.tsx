@@ -24,6 +24,11 @@ export default function ProfilePage() {
   })
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [saving, setSaving] = useState(false)
+  const [studentInfo, setStudentInfo] = useState<any>(null)
+  const [parentInfo, setParentInfo] = useState<any>(null)
+  const [classInfo, setClassInfo] = useState<any>(null)
+  const [teacherInfo, setTeacherInfo] = useState<any>(null)
+  const [childrenInfo, setChildrenInfo] = useState<any[]>([])
 
   useEffect(() => {
     if (!loading && !user) {
@@ -38,8 +43,52 @@ export default function ProfilePage() {
         phone: user.phone,
         avatar_url: user.avatar_url || ''
       })
+      fetchAdditionalInfo()
     }
   }, [user])
+
+  async function fetchAdditionalInfo() {
+    if (!user) return
+
+    try {
+      if (user.role === 'student') {
+        // Fetch student info including class and parent
+        const { data: studentData } = await supabase
+          .from('students')
+          .select('*, classes(*), profiles:parent_id(full_name, email, phone)')
+          .eq('user_id', user.id)
+          .single()
+
+        if (studentData) {
+          setStudentInfo(studentData)
+          setClassInfo(studentData.classes)
+          setParentInfo(studentData.profiles)
+
+          // Fetch class teacher
+          if (studentData.classes?.class_teacher_id) {
+            const { data: teacherData } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', studentData.classes.class_teacher_id)
+              .single()
+            setTeacherInfo(teacherData)
+          }
+        }
+      } else if (user.role === 'parent') {
+        // Fetch children info
+        const { data: childrenData } = await supabase
+          .from('students')
+          .select('*, classes(*), profiles:user_id(full_name, student_id, email), teachers:classes.class_teacher_id(full_name, email)')
+          .eq('parent_id', user.id)
+
+        if (childrenData) {
+          setChildrenInfo(childrenData)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching additional info:', error)
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -252,6 +301,91 @@ export default function ProfilePage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Student Information Section */}
+        {user.role === 'student' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Academic Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {classInfo && (
+                  <div className="flex justify-between items-center py-2 border-b">
+                    <span className="font-medium">Class</span>
+                    <span className="text-gray-600 dark:text-gray-400">
+                      {classInfo.name} - {classInfo.section}
+                    </span>
+                  </div>
+                )}
+                {teacherInfo && (
+                  <div className="flex justify-between items-center py-2 border-b">
+                    <span className="font-medium">Class Teacher</span>
+                    <span className="text-gray-600 dark:text-gray-400">
+                      {teacherInfo.full_name}
+                    </span>
+                  </div>
+                )}
+                {parentInfo && (
+                  <div className="flex justify-between items-center py-2 border-b">
+                    <span className="font-medium">Parent</span>
+                    <span className="text-gray-600 dark:text-gray-400">
+                      {parentInfo.full_name}
+                    </span>
+                  </div>
+                )}
+                {user.student_id && (
+                  <div className="flex justify-between items-center py-2">
+                    <span className="font-medium">Student ID</span>
+                    <span className="text-gray-600 dark:text-gray-400 font-mono">
+                      {user.student_id}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Parent Information Section */}
+        {user.role === 'parent' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Children Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {childrenInfo.length === 0 ? (
+                <p className="text-gray-500 text-center py-4">No children linked to your account</p>
+              ) : (
+                <div className="space-y-4">
+                  {childrenInfo.map((child) => (
+                    <div key={child.id} className="border rounded-lg p-4">
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium">{child.profiles?.full_name}</span>
+                          <span className="text-sm text-gray-500">{child.profiles?.student_id || 'No ID'}</span>
+                        </div>
+                        {child.classes && (
+                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                            Class: {child.classes.name} - {child.classes.section}
+                          </div>
+                        )}
+                        {child.teachers && (
+                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                            Class Teacher: {child.teachers.full_name}
+                          </div>
+                        )}
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          Email: {child.profiles?.email}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </DashboardLayout>
   )
