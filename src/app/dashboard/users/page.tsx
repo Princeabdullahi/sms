@@ -53,8 +53,12 @@ export default function UsersPage() {
     role: '',
     phone: '',
     student_id: '',
-    avatar_url: '' as string | File
+    avatar_url: '' as string | File,
+    class_id: '',
+    linked_student_id: ''
   })
+  const [classes, setClasses] = useState<any[]>([])
+  const [students, setStudents] = useState<any[]>([])
 
   useEffect(() => {
     if (!loading && !user) {
@@ -65,8 +69,39 @@ export default function UsersPage() {
   useEffect(() => {
     if (user) {
       fetchUsers()
+      fetchClasses()
+      fetchStudents()
     }
   }, [user])
+
+  async function fetchClasses() {
+    try {
+      const { data, error } = await supabase
+        .from('classes')
+        .select('*')
+        .order('name', { ascending: true })
+
+      if (error) throw error
+      setClasses(data || [])
+    } catch (error) {
+      console.error('Error fetching classes:', error)
+    }
+  }
+
+  async function fetchStudents() {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('role', 'student')
+        .order('full_name', { ascending: true })
+
+      if (error) throw error
+      setStudents(data || [])
+    } catch (error) {
+      console.error('Error fetching students:', error)
+    }
+  }
 
   async function fetchUsers() {
     try {
@@ -134,14 +169,36 @@ export default function UsersPage() {
           formData.student_id
         )
         
-        // Update avatar after user creation
-        if (avatarUrl) {
-          const { data: userData } = await supabase.auth.getUser()
-          if (userData.user) {
+        // Get the newly created user
+        const { data: userData } = await supabase.auth.getUser()
+        if (userData.user) {
+          // Update avatar after user creation
+          if (avatarUrl) {
             await supabase
               .from('profiles')
               .update({ avatar_url: avatarUrl })
               .eq('id', userData.user.id)
+          }
+
+          // Handle student class assignment
+          if (formData.role === 'student' && formData.class_id) {
+            await supabase
+              .from('students')
+              .insert({
+                user_id: userData.user.id,
+                class_id: formData.class_id,
+                roll_number: formData.student_id || 'N/A',
+                date_of_birth: new Date().toISOString().split('T')[0],
+                address: 'To be updated'
+              })
+          }
+
+          // Handle parent-child linking
+          if (formData.role === 'parent' && formData.linked_student_id) {
+            await supabase
+              .from('students')
+              .update({ parent_id: userData.user.id })
+              .eq('user_id', formData.linked_student_id)
           }
         }
         
@@ -157,7 +214,9 @@ export default function UsersPage() {
         role: '',
         phone: '',
         student_id: '',
-        avatar_url: ''
+        avatar_url: '',
+        class_id: '',
+        linked_student_id: ''
       })
       fetchUsers()
     } catch (error: any) {
@@ -194,7 +253,9 @@ export default function UsersPage() {
       role: user.role,
       phone: user.phone,
       student_id: user.student_id || '',
-      avatar_url: user.avatar_url || ''
+      avatar_url: user.avatar_url || '',
+      class_id: user.class_id || '',
+      linked_student_id: user.linked_student_id || ''
     })
     setDialogOpen(true)
   }
@@ -208,7 +269,9 @@ export default function UsersPage() {
       role: '',
       phone: '',
       student_id: '',
-      avatar_url: ''
+      avatar_url: '',
+      class_id: '',
+      linked_student_id: ''
     })
     setDialogOpen(true)
   }
@@ -348,6 +411,46 @@ export default function UsersPage() {
                     placeholder={formData.role === 'teacher' ? 'e.g., GOA-T-001' : formData.role === 'student' ? 'e.g., GOA-S-001' : formData.role === 'parent' ? 'e.g., GOA-P-001' : 'e.g., GOA-001'}
                   />
                 </div>
+                {formData.role === 'student' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="class">Class</Label>
+                    <Select
+                      value={formData.class_id}
+                      onValueChange={(value) => setFormData({ ...formData, class_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a class" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {classes.map((cls) => (
+                          <SelectItem key={cls.id} value={cls.id}>
+                            {cls.name} - {cls.section}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                {formData.role === 'parent' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="linked_student">Link to Student</Label>
+                    <Select
+                      value={formData.linked_student_id}
+                      onValueChange={(value) => setFormData({ ...formData, linked_student_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Search by Student ID or Name" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {students.map((student) => (
+                          <SelectItem key={student.id} value={student.id}>
+                            {student.full_name} ({student.student_id || 'No ID'})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone</Label>
                   <Input

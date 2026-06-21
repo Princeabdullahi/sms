@@ -72,27 +72,20 @@ export default function PaymentsPage() {
     try {
       let query = supabase
         .from('payments')
-        .select('*, students(user_id, roll_number), profiles:students.user_id(full_name)')
+        .select('*, profiles:student_id(full_name, student_id)')
         .order('created_at', { ascending: false })
 
       if (user?.role === 'student') {
-        const { data: studentData } = await supabase
-          .from('students')
-          .select('id')
-          .eq('user_id', user.id)
-          .single()
-        
-        if (studentData) {
-          query = query.eq('student_id', studentData.id)
-        }
+        query = query.eq('student_id', user.id)
       } else if (user?.role === 'parent') {
+        // For parents, we need to get their children's IDs from the students table
         const { data: childrenData } = await supabase
           .from('students')
-          .select('id')
+          .select('user_id')
           .eq('parent_id', user.id)
         
         if (childrenData && childrenData.length > 0) {
-          const childIds = childrenData.map(c => c.id)
+          const childIds = childrenData.map(c => c.user_id)
           query = query.in('student_id', childIds)
         }
       }
@@ -110,9 +103,10 @@ export default function PaymentsPage() {
   async function fetchStudents() {
     try {
       const { data, error } = await supabase
-        .from('students')
-        .select('*, profiles:user_id(full_name)')
-        .order('roll_number', { ascending: true })
+        .from('profiles')
+        .select('id, full_name, student_id')
+        .eq('role', 'student')
+        .order('full_name', { ascending: true })
 
       if (error) throw error
       setStudents(data || [])
@@ -308,7 +302,7 @@ export default function PaymentsPage() {
                       <SelectContent>
                         {students.map((student) => (
                           <SelectItem key={student.id} value={student.id}>
-                            {student.profiles?.full_name} ({student.roll_number})
+                            {student.full_name} ({student.student_id || 'No ID'})
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -412,7 +406,7 @@ export default function PaymentsPage() {
                   payments.map((payment) => (
                     <TableRow key={payment.id}>
                       <TableCell className="font-medium">
-                        {payment.profiles?.full_name || 'Unknown'}
+                        {payment.profiles?.full_name || 'Unknown'} ({payment.profiles?.student_id || 'No ID'})
                       </TableCell>
                       <TableCell>${payment.amount.toFixed(2)}</TableCell>
                       <TableCell>

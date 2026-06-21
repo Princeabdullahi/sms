@@ -36,7 +36,7 @@ export default function DashboardPage() {
   async function fetchStats() {
     try {
       const [students, teachers, classes, subjects, payments, exams, notices] = await Promise.all([
-        supabase.from('students').select('id', { count: 'exact', head: true }),
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
         supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'teacher'),
         supabase.from('classes').select('id', { count: 'exact', head: true }),
         supabase.from('subjects').select('id', { count: 'exact', head: true }),

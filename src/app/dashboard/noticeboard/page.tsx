@@ -28,7 +28,7 @@ import { Calendar } from '@/components/ui/calendar'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
-import { Plus, Pencil, Trash2, Bell, Calendar as CalendarIcon } from 'lucide-react'
+import { Plus, Pencil, Trash2, Bell, Calendar as CalendarIcon, Eye } from 'lucide-react'
 import { format } from 'date-fns'
 
 export default function NoticeboardPage() {
@@ -38,6 +38,8 @@ export default function NoticeboardPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingNotice, setEditingNotice] = useState<any>(null)
   const [calendarOpen, setCalendarOpen] = useState(false)
+  const [viewingNotice, setViewingNotice] = useState<any>(null)
+  const [viewDialogOpen, setViewDialogOpen] = useState(false)
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -157,6 +159,11 @@ export default function NoticeboardPage() {
       event_date: undefined
     })
     setDialogOpen(true)
+  }
+
+  function handleView(notice: any) {
+    setViewingNotice(notice)
+    setViewDialogOpen(true)
   }
 
   function getAudienceBadgeColor(audience: string) {
@@ -295,6 +302,38 @@ export default function NoticeboardPage() {
           )}
         </div>
 
+        {/* View Notice Dialog */}
+        <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{viewingNotice?.title}</DialogTitle>
+              <DialogDescription>
+                {viewingNotice?.event_date && (
+                  <div className="flex items-center gap-2 text-sm text-gray-500 mt-2">
+                    <CalendarIcon className="h-4 w-4" />
+                    {format(new Date(viewingNotice.event_date), 'PPP')}
+                  </div>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            {viewingNotice && (
+              <div className="space-y-4">
+                <Badge className={getAudienceBadgeColor(viewingNotice.target_audience)}>
+                  {viewingNotice.target_audience}
+                </Badge>
+                <div className="prose dark:prose-invert max-w-none">
+                  <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap text-base leading-relaxed">
+                    {viewingNotice.content}
+                  </p>
+                </div>
+                <div className="pt-4 border-t text-sm text-gray-500">
+                  Posted by {viewingNotice.profiles?.full_name || 'Unknown'} on {format(new Date(viewingNotice.created_at), 'PPP')}
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredNotices.length === 0 ? (
             <Card className="col-span-full">
@@ -321,35 +360,46 @@ export default function NoticeboardPage() {
                   )}
                 </CardHeader>
                 <CardContent className="flex-1">
-                  <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                  <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap line-clamp-3">
                     {notice.content}
                   </p>
                   <div className="mt-4 pt-4 border-t text-sm text-gray-500">
                     Posted by {notice.profiles?.full_name || 'Unknown'}
                   </div>
                 </CardContent>
-                {canManageNotices && (
-                  <div className="p-4 pt-0 flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => handleEdit(notice)}
-                    >
-                      <Pencil className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => handleDelete(notice.id)}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
-                    </Button>
-                  </div>
-                )}
+                <div className="p-4 pt-0 flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => handleView(notice)}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    View
+                  </Button>
+                  {canManageNotices && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleEdit(notice)}
+                      >
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleDelete(notice.id)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </Button>
+                    </>
+                  )}
+                </div>
               </Card>
             ))
           )}
