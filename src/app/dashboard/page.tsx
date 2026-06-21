@@ -7,6 +7,9 @@ import DashboardLayout from '@/components/dashboard/DashboardLayout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Users, GraduationCap, BookOpen, DollarSign, Calendar, Bell, FileText } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { Calendar as CalendarComponent } from '@/components/ui/calendar'
+import { Badge } from '@/components/ui/badge'
+import { format } from 'date-fns'
 
 export default function DashboardPage() {
   const { user, loading } = useAuth()
@@ -20,6 +23,8 @@ export default function DashboardPage() {
     upcomingExams: 0,
     recentNotices: 0
   })
+  const [notices, setNotices] = useState<any[]>([])
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
 
   useEffect(() => {
     if (!loading && !user) {
@@ -30,6 +35,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (user) {
       fetchStats()
+      fetchNotices()
     }
   }, [user])
 
@@ -57,6 +63,48 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Error fetching stats:', error)
     }
+  }
+
+  async function fetchNotices() {
+    try {
+      const { data, error } = await supabase
+        .from('notices')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setNotices(data || [])
+    } catch (error) {
+      console.error('Error fetching notices:', error)
+    }
+  }
+
+  function getNoticesForDate(date: Date) {
+    if (!date) return []
+    const dateStr = format(date, 'yyyy-MM-dd')
+    return notices.filter(notice => {
+      const noticeDate = notice.event_date ? format(new Date(notice.event_date), 'yyyy-MM-dd') : format(new Date(notice.created_at), 'yyyy-MM-dd')
+      return noticeDate === dateStr
+    })
+  }
+
+  function hasNotice(date: Date) {
+    const dateStr = format(date, 'yyyy-MM-dd')
+    return notices.some(notice => {
+      const noticeDate = notice.event_date ? format(new Date(notice.event_date), 'yyyy-MM-dd') : format(new Date(notice.created_at), 'yyyy-MM-dd')
+      return noticeDate === dateStr
+    })
+  }
+
+  function getAudienceBadgeColor(audience: string) {
+    const colors: Record<string, string> = {
+      all: 'bg-blue-500',
+      students: 'bg-green-500',
+      teachers: 'bg-purple-500',
+      parents: 'bg-pink-500',
+      admins: 'bg-orange-500'
+    }
+    return colors[audience] || 'bg-gray-500'
   }
 
   if (loading) {
@@ -161,6 +209,52 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Calendar & Notices</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <CalendarComponent
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={setSelectedDate}
+                  className="rounded-md border"
+                  modifiers={{
+                    hasNotice: hasNotice
+                  }}
+                  modifiersStyles={{
+                    hasNotice: {
+                      backgroundColor: '#3b82f6',
+                      color: 'white',
+                      fontWeight: 'bold'
+                    }
+                  }}
+                />
+                {selectedDate && getNoticesForDate(selectedDate).length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <h4 className="font-medium text-sm">Notices for {format(selectedDate, 'PPP')}</h4>
+                    {getNoticesForDate(selectedDate).map((notice) => (
+                      <div key={notice.id} className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{notice.title}</p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                              {notice.content}
+                            </p>
+                          </div>
+                          <Badge className={getAudienceBadgeColor(notice.target_audience)}>
+                            {notice.target_audience}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Quick Actions</CardTitle>
