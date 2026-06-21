@@ -160,7 +160,7 @@ export default function UsersPage() {
         toast.success('User updated successfully')
       } else {
         // Create new user
-        await signUp(
+        const authData = await signUp(
           formData.email,
           formData.password,
           formData.full_name,
@@ -169,15 +169,14 @@ export default function UsersPage() {
           formData.student_id
         )
         
-        // Get the newly created user
-        const { data: userData } = await supabase.auth.getUser()
-        if (userData.user) {
+        // Use the returned auth data instead of getting current user
+        if (authData.user) {
           // Update avatar after user creation
           if (avatarUrl) {
             await supabase
               .from('profiles')
               .update({ avatar_url: avatarUrl })
-              .eq('id', userData.user.id)
+              .eq('id', authData.user.id)
           }
 
           // Handle student class assignment
@@ -185,7 +184,7 @@ export default function UsersPage() {
             await supabase
               .from('students')
               .insert({
-                user_id: userData.user.id,
+                user_id: authData.user.id,
                 class_id: formData.class_id,
                 roll_number: formData.student_id || 'N/A',
                 date_of_birth: new Date().toISOString().split('T')[0],
@@ -197,7 +196,7 @@ export default function UsersPage() {
           if (formData.role === 'parent' && formData.linked_student_id) {
             await supabase
               .from('students')
-              .update({ parent_id: userData.user.id })
+              .update({ parent_id: authData.user.id })
               .eq('user_id', formData.linked_student_id)
           }
         }
