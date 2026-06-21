@@ -42,6 +42,9 @@ export default function ClassesPage() {
   const [teachers, setTeachers] = useState<any[]>([])
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingClass, setEditingClass] = useState<any>(null)
+  const [studentsDialogOpen, setStudentsDialogOpen] = useState(false)
+  const [selectedClassStudents, setSelectedClassStudents] = useState<any[]>([])
+  const [selectedClassName, setSelectedClassName] = useState('')
   const [formData, setFormData] = useState({
     name: '',
     section: '',
@@ -170,6 +173,23 @@ export default function ClassesPage() {
       class_teacher_id: ''
     })
     setDialogOpen(true)
+  }
+
+  async function handleViewStudents(cls: any) {
+    try {
+      const { data, error } = await supabase
+        .from('students')
+        .select('*, profiles:user_id(full_name, student_id, email, phone)')
+        .eq('class_id', cls.id)
+
+      if (error) throw error
+      setSelectedClassStudents(data || [])
+      setSelectedClassName(`${cls.name} - ${cls.section}`)
+      setStudentsDialogOpen(true)
+    } catch (error) {
+      console.error('Error fetching students:', error)
+      toast.error('Failed to fetch students')
+    }
   }
 
   async function getStudentCount(classId: string) {
@@ -324,7 +344,12 @@ export default function ClassesPage() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Users className="h-4 w-4 text-gray-500" />
-                          <StudentCount classId={cls.id} />
+                          <button
+                            onClick={() => handleViewStudents(cls)}
+                            className="hover:text-blue-600 hover:underline cursor-pointer"
+                          >
+                            <StudentCount classId={cls.id} />
+                          </button>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -357,6 +382,53 @@ export default function ClassesPage() {
             </Table>
           </CardContent>
         </Card>
+
+        {/* Students Dialog */}
+        <Dialog open={studentsDialogOpen} onOpenChange={setStudentsDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Students in {selectedClassName}</DialogTitle>
+              <DialogDescription>
+                {selectedClassStudents.length} student(s) in this class
+              </DialogDescription>
+            </DialogHeader>
+            {selectedClassStudents.length === 0 ? (
+              <div className="text-center py-8">
+                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">No students assigned to this class yet</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Student ID</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Phone</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {selectedClassStudents.map((student) => (
+                    <TableRow key={student.id}>
+                      <TableCell className="font-medium">
+                        {student.profiles?.full_name || 'Unknown'}
+                      </TableCell>
+                      <TableCell>
+                        {student.profiles?.student_id || 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        {student.profiles?.email || 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        {student.profiles?.phone || 'N/A'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   )
