@@ -27,7 +27,8 @@ import {
   Upload,
   Bell,
   Menu,
-  X
+  X,
+  PenTool
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -45,7 +46,7 @@ const navItems: NavItem[] = [
     title: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
-    roles: ['super_admin', 'admin', 'accountant', 'teacher', 'student', 'parent']
+    roles: ['super_admin', 'admin', 'accountant', 'teacher', 'student', 'parent', 'writer']
   },
   {
     title: 'Users',
@@ -88,6 +89,12 @@ const navItems: NavItem[] = [
     href: '/dashboard/noticeboard',
     icon: Bell,
     roles: ['super_admin', 'admin', 'teacher', 'student', 'parent']
+  },
+  {
+    title: 'Blog',
+    href: '/dashboard/writer',
+    icon: PenTool,
+    roles: ['super_admin', 'admin', 'writer']
   },
   {
     title: 'Study Materials',

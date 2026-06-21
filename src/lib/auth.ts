@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 
-export type UserRole = 'super_admin' | 'admin' | 'accountant' | 'teacher' | 'student' | 'parent'
+export type UserRole = 'super_admin' | 'admin' | 'accountant' | 'teacher' | 'student' | 'parent' | 'writer'
 
 export interface UserProfile {
   id: string
@@ -98,10 +98,11 @@ export async function updateUserProfile(userId: string, updates: Partial<UserPro
 
 export function hasPermission(userRole: UserRole, requiredRole: UserRole): boolean {
   const roleHierarchy: Record<UserRole, number> = {
-    super_admin: 6,
-    admin: 5,
-    accountant: 4,
-    teacher: 3,
+    super_admin: 7,
+    admin: 6,
+    accountant: 5,
+    teacher: 4,
+    writer: 3,
     parent: 2,
     student: 1,
   }
@@ -140,6 +141,8 @@ export function canAccessFeature(userRole: UserRole, feature: string): boolean {
       'view_child_timetable',
       'view_child_payments',
       'make_payments',
+      'manage_blog',
+      'publish_blog',
     ],
     admin: [
       'manage_classes',
@@ -168,6 +171,8 @@ export function canAccessFeature(userRole: UserRole, feature: string): boolean {
       'view_child_timetable',
       'view_child_payments',
       'make_payments',
+      'manage_blog',
+      'publish_blog',
     ],
     accountant: [
       'manage_payments',
@@ -187,6 +192,11 @@ export function canAccessFeature(userRole: UserRole, feature: string): boolean {
       'view_timetable',
       'view_payments',
       'view_noticeboard',
+      'manage_profile',
+    ],
+    writer: [
+      'manage_blog',
+      'publish_blog',
       'manage_profile',
     ],
     student: [

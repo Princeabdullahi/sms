@@ -394,6 +394,7 @@ export default function UsersPage() {
                       <SelectItem value="admin">Admin</SelectItem>
                       <SelectItem value="accountant">Accountant</SelectItem>
                       <SelectItem value="teacher">Teacher</SelectItem>
+                      <SelectItem value="writer">Writer</SelectItem>
                       <SelectItem value="student">Student</SelectItem>
                       <SelectItem value="parent">Parent</SelectItem>
                     </SelectContent>
