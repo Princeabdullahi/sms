@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import DashboardLayout from '@/components/dashboard/DashboardLayout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Users, GraduationCap, BookOpen, DollarSign, Calendar, Bell, FileText } from 'lucide-react'
+import { Users, GraduationCap, BookOpen, DollarSign, Calendar, Bell, FileText, PenTool, UserCheck, Upload } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Calendar as CalendarComponent } from '@/components/ui/calendar'
 import { Badge } from '@/components/ui/badge'
@@ -21,7 +21,11 @@ export default function DashboardPage() {
     totalSubjects: 0,
     pendingPayments: 0,
     upcomingExams: 0,
-    recentNotices: 0
+    recentNotices: 0,
+    totalBlogPosts: 0,
+    publishedBlogPosts: 0,
+    totalParents: 0,
+    totalWriters: 0
   })
   const [notices, setNotices] = useState<any[]>([])
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
@@ -41,14 +45,18 @@ export default function DashboardPage() {
 
   async function fetchStats() {
     try {
-      const [students, teachers, classes, subjects, payments, exams, notices] = await Promise.all([
+      const [students, teachers, classes, subjects, payments, exams, notices, blogPosts, publishedPosts, parents, writers] = await Promise.all([
         supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
         supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'teacher'),
         supabase.from('classes').select('id', { count: 'exact', head: true }),
         supabase.from('subjects').select('id', { count: 'exact', head: true }),
         supabase.from('payments').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('exams').select('id', { count: 'exact', head: true }).gte('exam_date', new Date().toISOString()),
-        supabase.from('notices').select('id', { count: 'exact', head: true })
+        supabase.from('notices').select('id', { count: 'exact', head: true }),
+        supabase.from('blog_posts').select('id', { count: 'exact', head: true }),
+        supabase.from('blog_posts').select('id', { count: 'exact', head: true }).eq('status', 'published'),
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'parent'),
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'writer')
       ])
 
       setStats({
@@ -58,7 +66,11 @@ export default function DashboardPage() {
         totalSubjects: subjects.count || 0,
         pendingPayments: payments.count || 0,
         upcomingExams: exams.count || 0,
-        recentNotices: notices.count || 0
+        recentNotices: notices.count || 0,
+        totalBlogPosts: blogPosts.count || 0,
+        publishedBlogPosts: publishedPosts.count || 0,
+        totalParents: parents.count || 0,
+        totalWriters: writers.count || 0
       })
     } catch (error) {
       console.error('Error fetching stats:', error)
@@ -168,6 +180,34 @@ export default function DashboardPage() {
       icon: Bell,
       color: 'bg-pink-500',
       roles: ['super_admin', 'admin', 'teacher', 'student', 'parent']
+    },
+    {
+      title: 'Blog Posts',
+      value: stats.totalBlogPosts,
+      icon: PenTool,
+      color: 'bg-teal-500',
+      roles: ['super_admin', 'admin', 'writer']
+    },
+    {
+      title: 'Published Posts',
+      value: stats.publishedBlogPosts,
+      icon: FileText,
+      color: 'bg-cyan-500',
+      roles: ['super_admin', 'admin', 'writer']
+    },
+    {
+      title: 'Total Parents',
+      value: stats.totalParents,
+      icon: UserCheck,
+      color: 'bg-amber-500',
+      roles: ['super_admin', 'admin']
+    },
+    {
+      title: 'Total Writers',
+      value: stats.totalWriters,
+      icon: PenTool,
+      color: 'bg-lime-500',
+      roles: ['super_admin', 'admin']
     }
   ]
 
@@ -178,7 +218,18 @@ export default function DashboardPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
+        {/* Mobile App-like Header */}
+        <div className="lg:hidden">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Welcome back, {user.full_name}!
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 text-sm">
+            {format(new Date(), 'EEEE, MMMM d, yyyy')}
+          </p>
+        </div>
+
+        {/* Desktop Header */}
+        <div className="hidden lg:block">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             Welcome back, {user.full_name}!
           </h1>
@@ -187,7 +238,26 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Mobile Stats Grid - App-like */}
+        <div className="lg:hidden grid grid-cols-2 gap-3">
+          {filteredStatCards.slice(0, 4).map((stat) => {
+            const Icon = stat.icon
+            return (
+              <Card key={stat.title} className="border-0 shadow-sm">
+                <CardContent className="p-4">
+                  <div className={`p-2 rounded-full ${stat.color} w-8 h-8 flex items-center justify-center mb-2`}>
+                    <Icon className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="text-2xl font-bold">{stat.value}</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">{stat.title}</div>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+
+        {/* Desktop Stats Grid */}
+        <div className="hidden lg:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredStatCards.map((stat) => {
             const Icon = stat.icon
             return (
@@ -208,7 +278,54 @@ export default function DashboardPage() {
           })}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Mobile Calendar Section */}
+        <div className="lg:hidden">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Calendar & Notices</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CalendarComponent
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                className="rounded-md border"
+                modifiers={{
+                  hasNotice: hasNotice
+                }}
+                modifiersStyles={{
+                  hasNotice: {
+                    backgroundColor: '#3b82f6',
+                    color: 'white',
+                    fontWeight: 'bold'
+                  }
+                }}
+              />
+              {selectedDate && getNoticesForDate(selectedDate).length > 0 && (
+                <div className="mt-4 space-y-2">
+                  <h4 className="font-medium text-sm">Notices for {format(selectedDate, 'PPP')}</h4>
+                  {getNoticesForDate(selectedDate).map((notice) => (
+                    <div key={notice.id} className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{notice.title}</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                            {notice.content}
+                          </p>
+                        </div>
+                        <Badge className={getAudienceBadgeColor(notice.target_audience)}>
+                          {notice.target_audience}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="hidden lg:grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
               <CardTitle>Calendar & Notices</CardTitle>
@@ -254,6 +371,72 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Mobile Quick Actions */}
+          <div className="lg:hidden">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {user.role === 'super_admin' || user.role === 'admin' ? (
+                  <>
+                    <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-3">
+                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                        <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <span className="text-sm">Create New User</span>
+                    </button>
+                    <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-3">
+                      <div className="w-8 h-8 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
+                        <GraduationCap className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      </div>
+                      <span className="text-sm">Add New Class</span>
+                    </button>
+                    <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-3">
+                      <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
+                        <Bell className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <span className="text-sm">Create Announcement</span>
+                    </button>
+                  </>
+                ) : user.role === 'teacher' ? (
+                  <>
+                    <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-3">
+                      <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900 rounded-full flex items-center justify-center">
+                        <Upload className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                      </div>
+                      <span className="text-sm">Upload Study Material</span>
+                    </button>
+                    <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-3">
+                      <div className="w-8 h-8 bg-pink-100 dark:bg-pink-900 rounded-full flex items-center justify-center">
+                        <FileText className="h-4 w-4 text-pink-600 dark:text-pink-400" />
+                      </div>
+                      <span className="text-sm">Create Assignment</span>
+                    </button>
+                  </>
+                ) : user.role === 'parent' ? (
+                  <>
+                    <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-3">
+                      <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center">
+                        <BookOpen className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                      </div>
+                      <span className="text-sm">View Child's Progress</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-3">
+                      <div className="w-8 h-8 bg-cyan-100 dark:bg-cyan-900 rounded-full flex items-center justify-center">
+                        <FileText className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                      </div>
+                      <span className="text-sm">View My Grades</span>
+                    </button>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
           <Card>
             <CardHeader>
@@ -314,6 +497,40 @@ export default function DashboardPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* Mobile Recent Activity */}
+          <div className="lg:hidden">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Recent Activity</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-2 h-2 mt-2 rounded-full bg-blue-500"></div>
+                    <div>
+                      <p className="text-sm font-medium">System updated successfully</p>
+                      <p className="text-xs text-gray-500">2 hours ago</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-2 h-2 mt-2 rounded-full bg-green-500"></div>
+                    <div>
+                      <p className="text-sm font-medium">New student enrolled</p>
+                      <p className="text-xs text-gray-500">5 hours ago</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-2 h-2 mt-2 rounded-full bg-purple-500"></div>
+                    <div>
+                      <p className="text-sm font-medium">Exam results published</p>
+                      <p className="text-xs text-gray-500">1 day ago</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
           <Card>
             <CardHeader>

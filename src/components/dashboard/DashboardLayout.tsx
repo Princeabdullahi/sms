@@ -82,7 +82,7 @@ const navItems: NavItem[] = [
     title: 'Payments',
     href: '/dashboard/payments',
     icon: DollarSign,
-    roles: ['super_admin', 'admin', 'accountant', 'student', 'parent']
+    roles: ['super_admin', 'admin', 'accountant', 'parent']
   },
   {
     title: 'Noticeboard',
@@ -100,7 +100,7 @@ const navItems: NavItem[] = [
     title: 'Study Materials',
     href: '/dashboard/materials',
     icon: Upload,
-    roles: ['teacher', 'student']
+    roles: ['teacher', 'student', 'parent']
   },
   {
     title: 'Settings',
@@ -238,11 +238,35 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
       </aside>
 
+      {/* Mobile Bottom Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 lg:hidden z-50">
+        <div className="flex justify-around items-center h-16">
+          {filteredNavItems.slice(0, 5).map((item) => {
+            const Icon = item.icon
+            const isActive = pathname === item.href
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex flex-col items-center justify-center w-full h-full",
+                  isActive ? "text-blue-600 dark:text-blue-400" : "text-gray-600 dark:text-gray-400"
+                )}
+              >
+                <Icon className="h-5 w-5" />
+                <span className="text-xs mt-1">{item.title}</span>
+              </Link>
+            )
+          })}
+        </div>
+      </nav>
+
       {/* Main Content */}
       <main
         className={cn(
           "pt-16 transition-all duration-300",
-          "lg:ml-64"
+          "lg:ml-64",
+          "pb-16 lg:pb-0"
         )}
       >
         <div className="p-4 sm:p-6">

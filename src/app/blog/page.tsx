@@ -215,7 +215,9 @@ export default function BlogPage() {
                     {post.excerpt || post.content.substring(0, 150)}
                   </p>
                   <Button variant="outline" className="w-full">
-                    Read More
+                    <Link href={`/blog/${post.slug}`} className="w-full">
+                      Read More
+                    </Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -227,7 +229,7 @@ export default function BlogPage() {
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-8 mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p>&copy; 2024 Golden Olives Academy. All rights reserved.</p>
+          <p>&copy; 2026 Golden Olives Academy. All rights reserved.</p>
         </div>
       </footer>
     </div>

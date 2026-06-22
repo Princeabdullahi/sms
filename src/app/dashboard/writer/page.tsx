@@ -37,6 +37,7 @@ import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { Plus, Pencil, Trash2, Upload, Eye, Calendar, FileText, Image as ImageIcon, Video } from 'lucide-react'
 import { format } from 'date-fns'
+import RichTextEditor from '@/components/RichTextEditor'
 
 export default function WriterDashboard() {
   const { user, loading } = useAuth()
@@ -401,13 +402,9 @@ export default function WriterDashboard() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="content">Content</Label>
-                  <Textarea
-                    id="content"
-                    placeholder="Write your post content here..."
-                    value={formData.content}
-                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                    required
-                    rows={10}
+                  <RichTextEditor
+                    content={formData.content}
+                    onChange={(content) => setFormData({ ...formData, content })}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
