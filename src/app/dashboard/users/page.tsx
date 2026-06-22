@@ -181,7 +181,7 @@ export default function UsersPage() {
 
           // Handle student class assignment
           if (formData.role === 'student' && formData.class_id) {
-            await supabase
+            const { error: studentError } = await supabase
               .from('students')
               .insert({
                 user_id: authData.user.id,
@@ -190,6 +190,7 @@ export default function UsersPage() {
                 date_of_birth: new Date().toISOString().split('T')[0],
                 address: 'To be updated'
               })
+            if (studentError) throw studentError
           }
 
           // Handle parent-child linking

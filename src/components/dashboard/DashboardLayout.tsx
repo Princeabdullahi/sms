@@ -28,7 +28,8 @@ import {
   Bell,
   Menu,
   X,
-  PenTool
+  PenTool,
+  ClipboardList
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -97,10 +98,16 @@ const navItems: NavItem[] = [
     roles: ['super_admin', 'admin', 'writer']
   },
   {
+    title: 'Assignments',
+    href: '/dashboard/assignments',
+    icon: ClipboardList,
+    roles: ['super_admin', 'admin', 'teacher', 'student', 'parent']
+  },
+  {
     title: 'Study Materials',
     href: '/dashboard/materials',
     icon: Upload,
-    roles: ['teacher', 'student', 'parent']
+    roles: ['super_admin', 'admin', 'teacher', 'student', 'parent']
   },
   {
     title: 'Settings',
