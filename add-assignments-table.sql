@@ -1,5 +1,8 @@
+-- Drop assignments table if it exists (to handle schema changes)
+DROP TABLE IF EXISTS assignments CASCADE;
+
 -- Create assignments table
-CREATE TABLE IF NOT EXISTS assignments (
+CREATE TABLE assignments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title VARCHAR(255) NOT NULL,
   description TEXT,
@@ -27,11 +30,19 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
+DROP TRIGGER IF EXISTS update_assignments_updated_at ON assignments;
 CREATE TRIGGER update_assignments_updated_at BEFORE UPDATE ON assignments
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Enable RLS
 ALTER TABLE assignments ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Teachers can view own assignments" ON assignments;
+DROP POLICY IF EXISTS "Teachers can create assignments" ON assignments;
+DROP POLICY IF EXISTS "Teachers can update own assignments" ON assignments;
+DROP POLICY IF EXISTS "Teachers can delete own assignments" ON assignments;
+DROP POLICY IF EXISTS "Students and parents can view class assignments" ON assignments;
 
 -- RLS Policies
 -- Teachers can see their own assignments
