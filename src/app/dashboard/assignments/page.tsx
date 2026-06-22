@@ -150,7 +150,7 @@ export default function AssignmentsPage() {
             due_date: formData.due_date,
             points: parseInt(formData.points),
             status: formData.status,
-            created_by: user.id
+            created_by: user!.id
           })
 
         if (error) throw error
