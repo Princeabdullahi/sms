@@ -70,6 +70,7 @@ export default function AssignmentsPage() {
   }, [user])
 
   async function fetchAssignments() {
+    if (!user) return
     try {
       let query = supabase
         .from('assignments')
