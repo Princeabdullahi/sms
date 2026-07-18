@@ -246,7 +246,6 @@
         <div id="webview-title" class="webview-title">Loading</div>
         <a id="webview-external" class="webview-external" href="#" target="_blank" rel="noopener noreferrer">Open browser</a>
       </div>
-      <div id="webview-status" class="webview-status">Loading content...</div>
       <iframe id="webview-frame" class="webview-frame" title="GOA content"></iframe>
     </div>
 
@@ -259,7 +258,6 @@
       const webviewShell = document.getElementById('webview-shell');
       const webviewFrame = document.getElementById('webview-frame');
       const webviewTitle = document.getElementById('webview-title');
-      const webviewStatus = document.getElementById('webview-status');
       const webviewClose = document.getElementById('webview-close');
       const webviewExternal = document.getElementById('webview-external');
 
@@ -279,7 +277,6 @@
       function openWebview(url, label) {
         webviewTitle.textContent = label;
         webviewExternal.href = url;
-        webviewStatus.textContent = 'Loading content...';
         webviewFrame.src = url;
         webviewShell.classList.add('visible');
         document.body.style.overflow = 'hidden';
@@ -332,12 +329,8 @@
           }
         });
 
-        webviewFrame.addEventListener('load', () => {
-          webviewStatus.textContent = 'Content loaded';
-        });
-
         webviewFrame.addEventListener('error', () => {
-          webviewStatus.textContent = 'This page could not be displayed here. Use Open browser instead.';
+          webviewTitle.textContent = 'Unable to load page';
         });
 
         window.addEventListener('online', updateNetworkUI);
