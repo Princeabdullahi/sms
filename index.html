@@ -39,6 +39,7 @@
         user-select: none;
         -webkit-user-select: none;
         -webkit-touch-callout: none;
+        overflow: hidden;
       }
 
       .app-shell {
@@ -48,6 +49,8 @@
         box-shadow: var(--shadow);
         padding: 28px;
         text-align: center;
+        max-height: calc(100vh - 48px);
+        overflow: auto;
       }
 
       .status-pill {
