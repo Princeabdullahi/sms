@@ -7,6 +7,7 @@
     <meta name="description" content="Golden Olives Academy official links" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="format-detection" content="telephone=no" />
     <title>Golden Olives Academy</title>
     <link rel="manifest" href="manifest.json" />
@@ -159,10 +160,10 @@
       <p>Access GOA quickly and conveniently from your device.</p>
 
       <div class="buttons">
-        <a class="btn btn-website" data-link="website" href="#" target="_blank" rel="noopener noreferrer">🌐 Sign in</a>
-        <a class="btn btn-facebook" data-link="facebook" href="#" target="_blank" rel="noopener noreferrer">📘 Facebook</a>
-        <a class="btn btn-twitter" data-link="twitter" href="#" target="_blank" rel="noopener noreferrer">𝕏 Twitter</a>
-        <a class="btn btn-instagram" data-link="instagram" href="#" target="_blank" rel="noopener noreferrer">📸 Instagram</a>
+        <a class="btn btn-website" data-link="website" href="#">🌐 Sign in</a>
+        <a class="btn btn-facebook" data-link="facebook" href="#">📘 Facebook</a>
+        <a class="btn btn-twitter" data-link="twitter" href="#">𝕏 Twitter</a>
+        <a class="btn btn-instagram" data-link="instagram" href="#">📸 Instagram</a>
       </div>
 
       <p class="footer">Fast access to GOA anytime, even when your connection is limited.</p>
@@ -208,9 +209,12 @@
             if (!navigator.onLine) {
               event.preventDefault();
               offlineModal.classList.remove('hidden');
-            } else {
-              hideOfflineModal();
+              return;
             }
+
+            event.preventDefault();
+            hideOfflineModal();
+            window.location.assign(url);
           });
         });
 
